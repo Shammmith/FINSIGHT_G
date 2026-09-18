@@ -148,7 +148,7 @@ class HybridClusteringPipeline:
             # This skips the memory-heavy conversion step entirely
             model_id = "Xenova/all-MiniLM-L6-v2" 
             HybridClusteringPipeline._tokenizer = AutoTokenizer.from_pretrained(model_id)
-            HybridClusteringPipeline._model = ORTModelForFeatureExtraction.from_pretrained(model_id, file_name="model.onnx")
+            HybridClusteringPipeline._model = ORTModelForFeatureExtraction.from_pretrained(model_id, file_name="onnx/model.onnx")
 
         self.model = HybridClusteringPipeline._model
         self.tokenizer = HybridClusteringPipeline._tokenizer
