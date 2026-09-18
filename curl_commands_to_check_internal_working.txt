@@ -1,0 +1,339 @@
+Both services running locally. Let's run the local smoke test now — this validates the entire vertical slice before we touch GitHub or deployment.
+
+---
+
+## Local Smoke Test — Run These in a NEW Third Terminal
+
+Keep both uvicorn terminals running. Open a fresh terminal (not inside either venv — just a plain terminal is fine for curl).
+
+---
+
+### Step 1 — Confirm Both Health Endpoints
+
+```powershell
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+```
+
+**Expected both:**
+```json
+{"status": "ok"}
+```
+
+---
+
+### Step 2 — Register a User
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/auth/register `
+  -H "Content-Type: application/json" `
+  -d "{\"email\": \"test@finsight.com\", \"password\": \"TestPass123!\"}"
+```
+
+**Expected:**
+```json
+{"id": "...", "email": "test@finsight.com", "role": "user"}
+```
+
+---
+
+### Step 3 — Login and Capture Token
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/auth/login `
+  -H "Content-Type: application/x-www-form-urlencoded" `
+  -d "username=test@finsight.com&password=TestPass123!"
+```
+
+**Expected:**
+```json
+{"access_token": "eyJ...", "token_type": "bearer"}
+```
+
+Copy the token value. Then set it as a variable — in PowerShell:
+```powershell
+$TOKEN = "eyJ..."
+```
+
+---
+
+### Step 4 — Create Test CSV and Upload
+
+First create the file:
+```powershell
+@"
+date,description,amount
+2024-01-05,SBUX COFFEE #4521,-5.75
+2024-01-06,STARBUCKS STORE 1102,-4.50
+2024-01-07,UBER TRIP,-12.30
+2024-01-08,SALARY CREDIT ACME CORP,3000.00
+2024-01-09,NETFLIX.COM,-15.99
+2024-01-10,WALMART SUPERCENTER,-87.42
+2024-01-12,COSTA COFFEE LTD,-6.20
+2024-01-15,SPOTIFY PREMIUM,-9.99
+"@ | Out-File -FilePath test_statement.csv -Encoding utf8
+```
+
+Then upload it:
+```powershell
+curl -X POST http://localhost:8000/api/v1/statements/upload `
+  -H "Authorization: Bearer $TOKEN" `
+  -F "file=@test_statement.csv"
+```
+
+**Expected:**
+```json
+{"statement_id": "...", "transactions_parsed": 8}
+```
+
+Set the statement ID:
+```powershell
+$STATEMENT_ID = "paste-statement-id-here"
+```
+
+---
+
+### Step 5 — Trigger Clustering Job
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/cluster `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "Content-Type: application/json" `
+  -d "{\"statement_id\": \"$STATEMENT_ID\"}"
+```
+
+**Expected:**
+```json
+{"job_id": "...", "status": "QUEUED"}
+```
+
+Set the job ID:
+```powershell
+$JOB_ID = "paste-job-id-here"
+```
+
+---
+
+### Step 6 — Poll Job Status
+
+Run this every 5-10 seconds until status is `DONE`:
+```powershell
+curl http://localhost:8000/api/v1/cluster/$JOB_ID/status `
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Expected progression:**
+```json
+{"status": "QUEUED"  ...}
+{"status": "PROCESSING" ...}
+{"status": "DONE", "k_optimal": 4, "silhouette_score": 0.10...}
+```
+
+⏱ This will take **15-30 seconds** on first run locally — the ML Engine is embedding 8 transactions through SBERT. Subsequent runs are faster since the model is already loaded in memory.
+
+---
+
+### Step 7 — Verify in Supabase (Critical Semantic Check)
+
+While the job runs or after it completes, go to:
+
+**Supabase Dashboard → SQL Editor** and run:
+
+```sql
+SELECT cleaned_description, cluster_id 
+FROM transactions 
+WHERE statement_id = 'paste-your-statement-id-here'
+ORDER BY cluster_id;
+```
+
+**What to confirm:**
+- All 8 rows have a non-null `cluster_id`
+- `sbux coffee 4521`, `starbucks store 1102`, and `costa coffee ltd` all share the **same** `cluster_id` value
+- `salary credit acme corp` has a **different** `cluster_id` from the coffee ones
+
+This is the semantic clustering proof — the most important verification in the entire test.
+
+---
+
+### Step 8 — Test Predict Endpoint
+
+```powershell
+curl -X POST http://localhost:8001/api/v1/predict `
+  -H "Content-Type: application/json" `
+  -d "{\"description\": \"dunkin donuts coffee\", \"job_id\": \"$JOB_ID\"}"
+```
+
+**Expected:**
+```json
+{
+  "cluster_label": 2,
+  "keywords": ["coffee", "starbucks", "cafe", ...],
+  "distance": 0.18...,
+  "latency_ms": 12.4
+}
+```
+
+The keyword list should be coffee-related — confirming "dunkin donuts coffee" correctly resolved to the coffee cluster despite never appearing in the training data.
+
+---
+
+### Step 9 — Analytics Dashboard
+
+```powershell
+curl http://localhost:8000/api/v1/analytics/dashboard/$STATEMENT_ID `
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Expected:**
+```json
+{
+  "cash_flow": {
+    "total_income": 3000.00,
+    "total_expense": 136.44,
+    "net_cash_flow": 2863.56,
+    ...
+  },
+  "clusters": [...],
+  "monthly_trend": [...]
+}
+```
+
+Check `total_income` is exactly `3000.00` (only the salary row) and `total_expense` is the sum of all negative amounts.
+
+---
+
+## What to Paste Back
+
+Run all 9 steps and tell me:
+
+1. Did all steps complete without errors?
+2. The `k_optimal` value from Step 6
+3. Whether the Supabase SQL check in Step 7 confirmed SBUX/Starbucks/Costa share the same `cluster_id`
+4. The `latency_ms` value from Step 8
+5. The `cash_flow` numbers from Step 9
+
+Those 5 data points confirm the system is working end-to-end locally. Then we move straight to GitHub push and Render/Vercel deployment.
+
+
+The issue is that **PowerShell uses backtick (`) for line continuation but your terminal is CMD** (Command Prompt), not PowerShell. The backtick is being treated as a literal character, not a line break, which breaks the multi-line curl commands.
+
+Two options — pick whichever terminal you prefer:
+
+---
+
+## Option A: Switch to PowerShell (Recommended)
+
+In VS Code, click the dropdown arrow next to the `+` in the terminal panel → select **"PowerShell"** (not Command Prompt). Then re-run the commands exactly as written with the backtick line continuations — they'll work correctly.
+
+OR open PowerShell directly:
+```
+Start Menu → search "PowerShell" → open it
+cd C:\Users\shamm
+```
+
+---
+
+## Option B: Stay in CMD — Use Single-Line curl Commands
+
+If you want to stay in CMD, here are all 9 steps rewritten as **single-line commands** — no line continuation needed.
+
+### Step 1 — Health (already works)
+```cmd
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+```
+
+### Step 2 — Register
+```cmd
+curl -X POST http://localhost:8000/api/v1/auth/register -H "Content-Type: application/json" -d "{\"email\": \"test@finsight.com\", \"password\": \"TestPass123!\"}"
+```
+
+### Step 3 — Login
+```cmd
+curl -X POST http://localhost:8000/api/v1/auth/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=test@finsight.com&password=TestPass123!"
+```
+
+Copy the `access_token` value from the response. Then set it — in CMD you use `set` not `$`:
+```cmd
+set TOKEN=paste-your-token-here
+```
+
+### Step 4 — Create the CSV file
+
+In CMD, create the test file like this:
+```cmd
+(echo date,description,amount& echo 2024-01-05,SBUX COFFEE #4521,-5.75& echo 2024-01-06,STARBUCKS STORE 1102,-4.50& echo 2024-01-07,UBER TRIP,-12.30& echo 2024-01-08,SALARY CREDIT ACME CORP,3000.00& echo 2024-01-09,NETFLIX.COM,-15.99& echo 2024-01-10,WALMART SUPERCENTER,-87.42& echo 2024-01-12,COSTA COFFEE LTD,-6.20& echo 2024-01-15,SPOTIFY PREMIUM,-9.99) > test_statement.csv
+```
+
+Verify it was created correctly:
+```cmd
+type test_statement.csv
+```
+
+Expected output:
+```
+date,description,amount
+2024-01-05,SBUX COFFEE #4521,-5.75
+2024-01-06,STARBUCKS STORE 1102,-4.50
+...
+```
+
+Then upload:
+```cmd
+curl -X POST http://localhost:8000/api/v1/statements/upload -H "Authorization: Bearer %TOKEN%" -F "file=@test_statement.csv"
+```
+
+Note: In CMD variables are `%TOKEN%` not `$TOKEN`.
+
+Set the statement ID:
+```cmd
+set STATEMENT_ID=paste-statement-id-here
+```
+
+### Step 5 — Trigger Clustering
+```cmd
+curl -X POST http://localhost:8000/api/v1/cluster -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"statement_id\": \"%STATEMENT_ID%\"}"
+```
+
+Set the job ID:
+```cmd
+set JOB_ID=paste-job-id-here
+```
+
+### Step 6 — Poll Status (run repeatedly every 5-10 seconds)
+```cmd
+curl http://localhost:8000/api/v1/cluster/%JOB_ID%/status -H "Authorization: Bearer %TOKEN%"
+```
+
+### Step 7 — Supabase SQL Check
+Go to Supabase Dashboard → SQL Editor and run:
+```sql
+SELECT cleaned_description, cluster_id 
+FROM transactions 
+WHERE statement_id = 'paste-your-statement-id-here'
+ORDER BY cluster_id;
+```
+
+### Step 8 — Predict
+```cmd
+curl -X POST http://localhost:8001/api/v1/predict -H "Content-Type: application/json" -d "{\"description\": \"dunkin donuts coffee\", \"job_id\": \"%JOB_ID%\"}"
+```
+
+### Step 9 — Analytics Dashboard
+```cmd
+curl http://localhost:8000/api/v1/analytics/dashboard/%STATEMENT_ID% -H "Authorization: Bearer %TOKEN%"
+```
+
+---
+
+## Quick Check — Which Terminal Are You In?
+
+Run this one command right now:
+```
+echo %COMSPEC%
+```
+
+- If it returns `C:\Windows\System32\cmd.exe` → you're in CMD, use Option B above
+- If it returns nothing or errors → you're in PowerShell, use Option A commands
+
+Use the CMD single-line versions above and paste back the results of each step.

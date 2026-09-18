@@ -1,0 +1,10 @@
+{
+  "folders": [
+    { "path": "core_api", "name": "core_api" },
+    { "path": "ml_engine", "name": "ml_engine" },
+    { "path": "frontend", "name": "frontend" }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe"
+  }
+}

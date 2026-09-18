@@ -1,0 +1,31 @@
+# render.yaml
+services:
+  - type: web
+    name: finsight-core-api
+    env: docker
+    dockerfilePath: ./core_api/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ML_ENGINE_URL
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+  - type: web
+    name: finsight-ml-engine
+    env: docker
+    dockerfilePath: ./ml_engine/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false

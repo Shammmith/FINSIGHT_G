@@ -1,0 +1,4 @@
+# ml_engine/pyproject.toml
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
