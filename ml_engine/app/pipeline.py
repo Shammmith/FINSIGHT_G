@@ -144,11 +144,12 @@ class HybridClusteringPipeline:
         self.top_n_keywords = top_n_keywords
         
         if HybridClusteringPipeline._model is None:
-            model_id = "sentence-transformers/all-MiniLM-L6-v2"
-            # Load tokenizer and export model to ONNX format on the fly
+            # Use a pre-converted ONNX model from the HuggingFace Hub
+            # This skips the memory-heavy conversion step entirely
+            model_id = "Xenova/all-MiniLM-L6-v2" 
             HybridClusteringPipeline._tokenizer = AutoTokenizer.from_pretrained(model_id)
-            HybridClusteringPipeline._model = ORTModelForFeatureExtraction.from_pretrained(model_id, export=True)
-            
+            HybridClusteringPipeline._model = ORTModelForFeatureExtraction.from_pretrained(model_id)
+                        
         self.model = HybridClusteringPipeline._model
         self.tokenizer = HybridClusteringPipeline._tokenizer
 
