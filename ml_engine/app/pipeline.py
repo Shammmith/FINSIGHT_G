@@ -211,6 +211,8 @@ class HybridClusteringPipeline:
         # L2 normalize
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
         embeddings = embeddings / np.clip(norms, a_min=1e-9, a_max=None)
+        print(f"[DEBUG] Embedding sample (first 5 dims of first vector): {embeddings[0][:5]}")
+        
 
         return embeddings.astype(np.float32)
 
@@ -221,7 +223,12 @@ class HybridClusteringPipeline:
             km = KMeans(n_clusters=k, n_init=10, random_state=42)
             labels = km.fit_predict(embeddings)
             inertias.append(km.inertia_)
-            silhouettes.append(silhouette_score(embeddings, labels))
+            # Guard: silhouette requires at least 2 distinct cluster labels
+            n_distinct = len(set(labels))
+            if n_distinct >= 2:
+                silhouettes.append(silhouette_score(embeddings, labels))
+            else:
+                silhouettes.append(-1.0)  # worst possible score, will not be selected
 
         kneedle = KneeLocator(k_range, inertias, curve="convex", direction="decreasing")
         optimal_k = kneedle.elbow or k_range[int(np.argmax(silhouettes))]
