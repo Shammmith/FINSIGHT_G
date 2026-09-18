@@ -4,7 +4,7 @@ import httpx
 from app.config import settings
 
 async def call_ml_cluster(descriptions: list[str]) -> dict:
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=160.0) as client:
         resp = await client.post(
             f"{settings.ML_ENGINE_URL}/api/v1/cluster",
             json={"descriptions": descriptions},
