@@ -1,4 +1,3 @@
-// frontend/src/components/JobStatusPoller.tsx
 import { useEffect, useState } from "react";
 import { getJobStatus } from "@/services/api";
 

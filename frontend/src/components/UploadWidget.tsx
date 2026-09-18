@@ -1,4 +1,3 @@
-// frontend/src/components/UploadWidget.tsx
 "use client";
 import { useState } from "react";
 import { uploadStatement, triggerClustering } from "@/services/api";

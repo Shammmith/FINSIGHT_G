@@ -1,4 +1,3 @@
-// frontend/src/components/ClusterView.tsx
 export default function ClusterView({ clusters }: { clusters: any[] }) {
   return (
     <div style={{ display: "grid", gap: "12px" }}>

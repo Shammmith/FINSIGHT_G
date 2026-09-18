@@ -1,4 +1,3 @@
-// frontend/src/components/IncomeExpenseChart.tsx
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function IncomeExpenseChart({ monthlyTrend }: { monthlyTrend: any[] }) {
