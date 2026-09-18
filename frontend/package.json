@@ -1,9 +1,25 @@
 {
   "name": "finsight-frontend",
   "version": "1.0.0",
-  "scripts": { "dev": "next dev", "build": "next build", "start": "next start" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
-    "next": "14.2.3", "react": "^18", "react-dom": "^18",
-    "axios": "^1.7.2", "recharts": "^2.12.7"
+    "axios": "^1.7.2",
+    "next": "15.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.0",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "typescript": "5.5.3"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
