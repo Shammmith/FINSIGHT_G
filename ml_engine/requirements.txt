@@ -10,4 +10,5 @@ prometheus-client==0.20.0
 python-dotenv==1.0.1
 optimum[onnxruntime]==1.21.2
 onnxruntime==1.18.1
-torch==2.4.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+#torch==2.4.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1
