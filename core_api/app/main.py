@@ -11,12 +11,14 @@ app = FastAPI(title="FinSight Core API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://finsight-git-main-xyz-0e42.vercel.app",
         "http://localhost:3000",
+        "https://finsight-git-main-xyz-0e42.vercel.app/login",
+        "https://finsight-iaijahk1d-xyz-0e42.vercel.app/login"
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    max_age=3600,
 )
 
 if settings.SENTRY_DSN:
