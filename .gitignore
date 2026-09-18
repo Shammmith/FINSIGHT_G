@@ -1,0 +1,19 @@
+# Environment secrets — NEVER commit
+.env
+core_api/.env
+ml_engine/.env
+frontend/.env.local
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+
+# OS
+.DS_Store
+Thumbs.db
