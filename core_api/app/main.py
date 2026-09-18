@@ -12,8 +12,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://finsight-git-main-xyz-0e42.vercel.app/login",
-        "https://finsight-iaijahk1d-xyz-0e42.vercel.app/login"
+        "https://finsight-iaijahk1d-xyz-0e42.vercel.app",
+        "https://finsight-git-main-xyz-0e42.vercel.app"
+        
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
