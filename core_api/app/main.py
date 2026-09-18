@@ -10,7 +10,11 @@ app = FastAPI(title="FinSight Core API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten to Vercel domain in prod
+    allow_origins=[
+        "https://finsight-git-main-xyz-0e42.vercel.app",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
